@@ -1,0 +1,20 @@
+#admixture
+for K in 3 4 5 6 7 8 9 10 ; do ./admixture --cv tea100.bed $K | tee log${K}.out;done
+
+
+#PCA with PLINK
+plink --allow-extra-chr --threads 20 -bfile tea100  --pca 20 --out tea_pca
+
+
+#gwas with gemma
+for file in  0.phenotype/*.txt;
+ do gemma-0.98.1-linux-static -bfile tea100 -p $file -k tea_reseq_kin.sXX.txt -lmm 1 -o ${file##*/};
+ done
+
+
+#LD with PopLDdecay 
+ perl bin/mis/plink2genotype.pl    -inPED tea100.ped -inMAP in.map  -outGenotype out.genotype
+ ./bin/PopLDdecay        -InGenotype out.genotype -OutStat LDdecay 
+
+#Local LD and manhattan plots with LDBlockShow
+LDBlockShow -InVCF /public/xftan/tea/tea_2021/SNP_annotation.vcf -OutPut  Otu4877_peak -InGWAS Otu4877_gwas.txt -Cutline 11.70997   -InGFF   /public/xftan/tea/tea_2021/1.genome/CSS_ChrLev_20200506.gff3   -Region    Chr9:67463486:67505686    -SeleVar 2  -BlockType 5 
